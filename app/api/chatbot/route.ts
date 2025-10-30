@@ -1,8 +1,10 @@
 import { streamText, tool } from "ai"
 import { z } from "zod"
 
+// Durée max de réponse (en secondes)
 export const maxDuration = 30
 
+// 🔹 Outil : Recherche de médicaments
 const searchMedicationsTool = tool({
   description: "Rechercher des médicaments dans le catalogue",
   inputSchema: z.object({
@@ -11,7 +13,7 @@ const searchMedicationsTool = tool({
   execute: async ({ query }) => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/medications/search?q=${encodeURIComponent(query)}&limit=5`,
+        `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/medications/search?q=${encodeURIComponent(query)}&limit=5`
       )
       const data = await response.json()
       return {
@@ -26,13 +28,14 @@ const searchMedicationsTool = tool({
   },
 })
 
+// 🔹 Outil : Suivi des commandes
 const getOrderStatusTool = tool({
   description: "Vérifier le statut d'une commande",
   inputSchema: z.object({
     orderId: z.string().describe("Le numéro de commande"),
   }),
   execute: async ({ orderId }) => {
-    // Simulation - en production, cela interrogerait la base de données
+    // 🔹 Simulation : remplacer par vraie base de données en production
     return {
       orderId,
       status: "En cours de livraison",
@@ -41,34 +44,37 @@ const getOrderStatusTool = tool({
   },
 })
 
+// Tous les outils disponibles
 const tools = {
   searchMedications: searchMedicationsTool,
   getOrderStatus: getOrderStatusTool,
 }
 
+// 🔹 Endpoint API : POST /api/chatbot
 export async function POST(req: Request) {
   const { messages } = await req.json()
 
   const systemPrompt = `Tu es un assistant virtuel pour BoltPharma, une plateforme de vente de médicaments en ligne au Bénin.
 
-Ton rôle est d'aider les clients avec :
-- La recherche de médicaments
-- Les informations sur les prix et disponibilités
-- Le suivi des commandes
-- Les questions sur la livraison avec GoZem
-- Les méthodes de paiement (MTN, MOOV, CELTIS)
-- Les questions générales sur la santé (sans donner de diagnostic médical)
+Ton rôle :
+- Aider les clients avec la recherche de médicaments
+- Fournir prix et disponibilité
+- Suivi des commandes
+- Questions sur la livraison (GoZem)
+- Méthodes de paiement (MTN, MOOV, CELTIS)
+- Questions générales sur la santé (sans diagnostic médical)
 
-Règles importantes :
-- Réponds toujours en français
-- Sois courtois et professionnel
-- Ne donne jamais de diagnostic médical
-- Recommande toujours de consulter un médecin pour des questions médicales sérieuses
-- Mentionne que la livraison est rapide (30 min en moyenne) avec GoZem
-- Les prix sont en Francs CFA
+Règles :
+- Toujours répondre en français
+- Courtois et professionnel
+- Ne jamais donner de diagnostic médical
+- Conseiller de consulter un médecin pour questions sérieuses
+- Mentionner que la livraison est rapide (~30 min) via GoZem
+- Prix en Francs CFA
 
-Si tu ne connais pas la réponse, propose de mettre le client en contact avec le support humain.`
+Si la réponse est inconnue, proposer le support humain.`
 
+  // 🔹 Génération de la réponse avec streaming
   const result = streamText({
     model: "openai/gpt-5-mini",
     messages: [{ role: "system", content: systemPrompt }, ...messages],
