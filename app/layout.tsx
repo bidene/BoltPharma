@@ -8,6 +8,13 @@ import { ClerkProvider } from "@clerk/nextjs"
 import { CartProvider } from "@/lib/cart-context"
 import { Chatbot } from "@/components/chatbot"
 import { LoadingScreen } from "@/components/loading-screen"
+import {
+  SignInButton,
+  SignUpButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from '@clerk/nextjs'
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -30,6 +37,19 @@ export default function RootLayout({
     <html lang="fr" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="font-sans">
         <ClerkProvider>
+          <header className="flex justify-end items-center p-4 gap-4 h-16">
+            <SignedOut>
+              <SignInButton />
+              <SignUpButton>
+                <button className="bg-[#6c47ff] text-ceramic-white rounded-full font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 cursor-pointer">
+                  S'inscrire
+                </button>
+              </SignUpButton>
+            </SignedOut>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+          </header>
           <LoadingScreen />
           <CartProvider>
             <Suspense fallback={null}>
